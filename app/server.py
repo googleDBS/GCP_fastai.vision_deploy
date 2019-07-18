@@ -8,8 +8,8 @@ from io import BytesIO
 from fastai import *
 from fastai.vision import *
 
-model_file_url = 'https://drive.google.com/uc?export=download&id=1iKsqwhkk5k_0kUsJWwm4ss3pWCD3h5CN'
-model_file_name = 'model'
+model_file_url = 'https://www.dropbox.com/s/v3z5yqcnxq8yuxc/realestate-rn34.pth?raw=1'
+model_file_name = 'realestate-rn34'
 classes = ['bathroom', 'bedroom', 'dining_room', 'exterior', 'interior', 'kitchen', 'living_room']
 path = Path(__file__).parent
 
@@ -26,10 +26,7 @@ async def download_file(url, dest):
 
 async def setup_learner():
     await download_file(model_file_url, path/'models'/f'{model_file_name}.pth')
-    data_bunch = ImageDataBunch.single_from_classes(path, classes,
-     size=224).normalize(imagenet_stats)
-    learn = cnn_learner(data_bunch, models.resnet34, pretrained=False)
-    learn.load(model_file_name)
+    learn = load_learner(model_file_name) 
     return learn
 
 loop = asyncio.get_event_loop()
