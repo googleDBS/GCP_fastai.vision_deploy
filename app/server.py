@@ -8,9 +8,18 @@ from io import BytesIO
 from fastai import *
 from fastai.vision import *
 
-model_file_url = 'https://www.dropbox.com/s/v3z5yqcnxq8yuxc/realestate-rn34.pth?raw=1'
-model_file_name = 'realestate-rn34'
-classes = ['bathroom', 'bedroom', 'dining_room', 'exterior', 'interior', 'kitchen', 'living_room']
+
+export_file_url = 'https://www.dropbox.com/s/uwgri9iz16yifws/export.pkl?raw=1'
+export_file_name = 'export.pkl'
+
+classes = ['Exterior',
+ 'Interior',
+ 'bathroom',
+ 'bedroom',
+ 'dining_room',
+ 'kitchen',
+ 'living_room']
+
 path = Path(__file__).parent
 
 app = Starlette()
@@ -22,12 +31,21 @@ async def download_file(url, dest):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             data = await response.read()
-            with open(dest, 'wb') as f: f.write(data)
+            with open(dest, 'wb') as f:
+                f.write(data)
 
 async def setup_learner():
-    await download_file(model_file_url, path/'models'/f'{model_file_name}.pkl')
-    learn = load_learner(path/'models')
-    return learn
+    await download_file(export_file_url, path / export_file_name)
+    try:
+        learn = load_learner(path, export_file_name)
+        return learn
+    except RuntimeError as e:
+        if len(e.args) > 0 and 'CPU-only machine' in e.args[0]:
+            print(e)
+            message = "\n\nThis model was trained with an old version of fastai and will not work in a CPU environment.\n\nPlease update the fastai library in your training environment and export your model again.\n\nSee instructions for 'Returning to work' at https://course.fast.ai."
+            raise RuntimeError(message)
+        else:
+            raise
 
 loop = asyncio.get_event_loop()
 tasks = [asyncio.ensure_future(setup_learner())]
